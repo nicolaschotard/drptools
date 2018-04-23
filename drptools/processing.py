@@ -1,7 +1,10 @@
 import os
 import glob
 import numpy
-import lsst.daf.persistence as dafPersist
+try:
+    import lsst.daf.persistence as dafPersist
+except:
+    print("WARNING: LSST DM software is not installed")
 
 
 class Butler(object):
@@ -93,7 +96,7 @@ class Butler(object):
         """Get the list of ID keys for a given catalog."""
         if datasetType not in self.datasetTypes:
             msg = "%s is not a valid datasetType. Check self.datasetTypes for the valid list." % \
-                  datasetType) 
+                  datasetType
             raise IOError(msg)
         return self.butler.getKeys(datasetType)
 
