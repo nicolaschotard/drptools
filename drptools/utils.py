@@ -351,3 +351,29 @@ def overwrite_or_append(filename, path, table, overwrite=False):
             print("Adding", path, " to", filename)
             table.write(filename, path=path, compression=True, serialize_meta=True,
                         append=True)
+
+
+def js9(myimage):
+    import IPython
+    html = """
+    <head>
+    <link type="text/css" rel="stylesheet" href="https://js9.si.edu/js9/js9support.css">
+    <link type="text/css" rel="stylesheet" href="https://js9.si.edu/js9/js9.css">
+    <script type="text/javascript" src="https://js9.si.edu/js9/js9prefs.js"></script>
+    <script type="text/javascript" src="https://js9.si.edu/js9/js9support.min.js"></script>
+    <script type="text/javascript" src="https://js9.si.edu/js9/js9.js"></script>
+    <script type="text/javascript" src="https://js9.si.edu/js9/js9plugins.js"></script>
+    <link type="text/css" rel="stylesheet" href="https://js9.si.edu/js9/js9-allinone.css">
+    <script type="text/javascript" src="https://js9.si.edu/js9/js9-allinone.js"></script>
+    </head>
+    <body onload="JS9.Preload('IMAGETOLOAD', {scale: 'log', zoom: 'to fit'});">
+    <div class="JS9Menubar" data-width="600px"></div>
+    <div class="JS9Toolbar" data-width="600px"></div>
+    <div class="JS9" data-width="600px" data-height="600px"></div>
+    <div style="margin-top: 2px;" data-width="600px">
+    <div class="JS9Colorbar" data-width="600px"></div>
+    href='javascript:JS9.Load("fits/casa.fits");'
+    </div>
+    </body>
+    """.replace('IMAGETOLOAD', myimage)
+    return IPython.display.HTML(html)

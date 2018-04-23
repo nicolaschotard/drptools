@@ -2,19 +2,14 @@
 
 
 from __future__ import print_function
-import os
-import gc
 import warnings
 import numpy as np
-import h5py
 import fitsio
-from astropy.wcs import WCS, utils
+from astropy.wcs import WCS
 from astropy.coordinates import SkyCoord, Angle
-from astropy.table import Table, Column, vstack
+from astropy.table import Table, Column
 from astropy.units import Quantity
-from progressbar import Bar, ProgressBar, Percentage, ETA
 from termcolor import colored
-import yaml
 from . import utils as cutils
 
 warnings.filterwarnings("ignore")
