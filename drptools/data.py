@@ -18,8 +18,10 @@ except ImportError:
     print(colored("WARNING: LSST stack is probably not installed", "yellow"))
 
 
-class Butler(object):
+class LoadDRP(object):
 
+    """Load an LSST DRP output and a few useful things."""
+    
     def __init__(self, drp_path=None):
 
         # Make sure we have data to load
@@ -216,7 +218,7 @@ class Butler(object):
 
 class Catalogs(object):
 
-    """Load data from a LSST stack butler path."""
+    """Load catalogs from an LSST DRP output path."""
 
     def __init__(self, path, load_butler=True):
         """."""
