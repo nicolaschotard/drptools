@@ -450,6 +450,7 @@ class DRPCatalogs(DRPLoader):
         """Load the deepCoadd_calexp info in order to get the WCS and the magnitudes."""
         print(colored("\nINFO: Loading the %s info" % calcat, 'green'))
         print("INFO: Getting the %s catalog for one dataId" % calcat)
+        self.dataIds[calcat] = self.dataIds['deepCoadd_meas']
         calexp = self._load_catalog_dataid(
             calcat, self.dataIds[calcat][0], table=False)
         print("INFO: Getting the magnitude function")
