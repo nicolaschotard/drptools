@@ -170,7 +170,7 @@ class DRPLoader(object):
         return datatypes
 
 
-class Files(DRPLoader):
+class DRPFiles(DRPLoader):
 
     def __init__(self, drp_path):
         """The 'drp_path' input is the path to the DRP output directory."""
@@ -220,7 +220,7 @@ class Files(DRPLoader):
         return self.get_file(datatype, self.get_dataid_from_dataset(datatype, test=True)[0])
 
 
-class Catalogs(DRPLoader):
+class DRPCatalogs(DRPLoader):
 
     """Load catalogs from an LSST DRP output path."""
 
