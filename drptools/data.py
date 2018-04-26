@@ -2,7 +2,6 @@ from __future__ import print_function
 import os
 import glob
 import numpy
-import fitsio
 from astropy.wcs import WCS
 from astropy.coordinates import SkyCoord, Angle
 from astropy.table import Table, Column
@@ -271,106 +270,12 @@ class DRPCatalogs(DRPLoader):
         super().__init__(drp_path)
 
         # Initialize data dictionnaries
-        self.dataids = {}
         self.catalogs = {}
         self.keys = {}
         self.missing = {}
         self.from_butler = {'getmag': None, 'wcs': None,
                             'schema': None, 'extension': None}
         self.append = False
-
-    def _load_dataids(self, catalog, **kwargs):
-        """Get the 'forced_src' catalogs."""
-        print("INFO: Getting list of available data for", catalog)
-        if 'deepCoadd' in catalog:  # The deepCoadd* catalogs
-            deepcoadd = [cat for cat in self.dataids if 'deepCoadd' in cat]
-            if len(deepcoadd):
-                dataids = self.dataids[deepcoadd[0]]
-            else:
-                dataids = [dict(tract=tract.getId(), patch="%d,%d" % patch.getIndex(), filter=filt)
-                           for tract in self.butler.get("deepCoadd_skyMap")
-                           for patch in tract
-                           for filt in kwargs.get('filter', ['u', 'g', 'r', 'i', 'i2', 'z'])]
-        else:  # The other catalogs
-            keys = self.butler.getKeys(catalog)
-            if 'tract' in keys:
-                keys.pop('tract')
-                metadata = self.butler.queryMetadata(
-                    catalog, format=sorted(keys.keys()))
-                dataids = [cutils.merge_dicts(dict(zip(sorted(keys.keys()), list(v))), {'tract': 0})
-                           for v in metadata]
-            else:
-                metadata = self.butler.queryMetadata(
-                    catalog, format=sorted(keys.keys()))
-                dataids = [dict(zip(sorted(keys.keys()), [v] if not isinstance(v, list) else v))
-                           for v in metadata]
-
-        if len(dataids) == 0:
-            raise IOError(
-                "No dataIds. Check the catalog, the config file, and path to the bulter.")
-
-        # Specific selection make by the user?
-        for kwarg in kwargs:
-            if kwarg not in dataids[0]:
-                continue
-            print("INFO: Selecting data ids according to the '%s' selection" % kwarg)
-            print("  - input: %i data ids" % len(dataids))
-            if not isinstance(kwargs[kwarg], list):
-                kwargs[kwarg] = [kwargs[kwarg]]
-            dataids = [dataid for dataid in dataids if dataid[kwarg]
-                       in kwargs[kwarg]]
-            print("  - selected: %i data ids" % len(dataids))
-
-        # Select the ccd/visit according to the input list of patch if given
-        if 'deepCoadd' not in catalog and 'patch' in kwargs and 'filter' in kwargs:
-            print("INFO: Selecting visit/ccd according to the input list of patches")
-            print("  - input: %i data ids" % len(dataids))
-            ccds_visits = self._get_ccd_visits(**kwargs)
-            dataids = [dataid for dataid in dataids if
-                       (dataid['ccd'], dataid['visit']) in ccds_visits]
-            print("  - selected: %i data ids" % len(dataids))
-
-        # Only keep dataids with data
-        print("INFO: Keep data IDs with data on disk")
-        print("  - input: %i data ids" % len(dataids))
-        self.dataids[catalog] = [dataid for dataid in dataids if
-                                 self.butler.datasetExists(catalog, dataId=dataid)]
-        self.missing[catalog] = [dataid for dataid in dataids if not
-                                 self.butler.datasetExists(catalog, dataId=dataid)]
-        print("  - selected: %i data ids" % len(self.dataids[catalog]))
-        if len(self.missing[catalog]):
-            print("  - missing: %i data ids (list available in 'self.missing[catalog]':" %
-                  len(self.missing[catalog]))
-        print("INFO: %i data ids finally kept" % len(self.dataids[catalog]))
-        if len(self.dataids[catalog]) == 0:
-            raise IOError(
-                "No data found for this catalog. Remove this catalog from the list.")
-
-    def _get_ccd_visits(self, **kwargs):
-        """Return the available ccd/visit according to the input list of patch."""
-        dids = [{'filter': filt, 'patch': patch, 'tract': 0}
-                for filt in kwargs['filter'] for patch in kwargs['patch']
-                if self.butler.datasetExists('deepCoadd',
-                                             dataId={'filter': filt, 'patch': patch, 'tract': 0})]
-        filenames = [kwargs['butler'] + '/deepCoadd' + "/%s/%i/%s.fits" %
-                     (did['filter'], did['tract'], did['patch']) for did in dids]
-        if self.from_butler['extension'] is None:
-            # Extensions have no names, so we have to guess which extension contains the
-            # 'visit' and 'ccd' info. we do it only once and then store this info. This allows
-            # us to be safe against variations in the number of extensions in fits files.
-            fitsdata = fitsio.FITS(filenames[0])
-            self.from_butler['extension'] = [i for i, ext in enumerate(fitsdata)
-                                             if (all([(key in ext.get_colnames())
-                                                      for key in ['ccd', 'visit']])
-                                                 if ext.get_exttype() == 'BINARY_TBL'
-                                                 else False)][0]
-            # other idea from Jim
-            # fitsdata = fitsio.read(filenames[0], 4)
-            # fitsdata[numpy.array([n.startswith('CoaddInputs')
-            #                    for n in fitsdata['name']])]['cat.archive'][1] + 4
-        return numpy.concatenate([fitsio.read(filename, columns=['ccd', 'visit'],
-                                           ext=self.from_butler['extension'])
-                               for filename in filenames]).tolist()
 
     def _load_catalog_dataid(self, catalog, dataid, table=True, **kwargs):
         """Load a catalog from a 'dataId' set of parameter."""
@@ -388,22 +293,22 @@ class DRPCatalogs(DRPLoader):
         """Load the catalogs from the butler."""
         filenames = (self.butler.get(dataset + "_filename",
                                      dataId, immediate=True)[0]
-                     for dataId in self.dataids[dataset])
+                     for dataId in self.dataIds[dataset])
         try:  # In recent stack version, metadata are in HDU 1
             headers = (afwimage.readMetadata(fn, 1) for fn in filenames)
             size = sum(md.get("NAXIS2") for md in headers)
         except:  # Older stack version
             headers = (afwimage.readMetadata(fn, 2) for fn in filenames)
             size = sum(md.get("NAXIS2") for md in headers)
-        cat = self.butler.get(dataset, self.dataids[dataset][0],
+        cat = self.butler.get(dataset, self.dataIds[dataset][0],
                               flags=afwtable.SOURCE_IO_NO_FOOTPRINTS, immediate=True)
         self.from_butler['schema'] = cat.schema
-        catadic = {k: [] for k in sorted(self.dataids[dataset][0].keys())}
+        catadic = {k: [] for k in sorted(self.dataIds[dataset][0].keys())}
         catalog = afwtable.SourceCatalog(self.from_butler['schema'])
         catalog.reserve(size)
-        pbar = cutils.progressbar(len(self.dataids[dataset]))
+        pbar = cutils.progressbar(len(self.dataIds[dataset]))
         print("INFO: Looping over the dataids")
-        for i, dataid in enumerate(self.dataids[dataset]):
+        for i, dataid in enumerate(self.dataIds[dataset]):
             cat = self.butler.get(dataset, dataid,
                                   flags=afwtable.SOURCE_IO_NO_FOOTPRINTS)
             catalog.extend(cat, deep=True)
@@ -414,15 +319,12 @@ class DRPCatalogs(DRPLoader):
         print("INFO: Merging the dictionnaries")
         catadic.update(catalog.getColumnView().extract(*self.keys[dataset],
                                                        copy=True, ordered=True))
-        # Clean memory before going further
-        # gc.collect()
         return catadic
 
     def _load_catalog(self, catalog, **kwargs):
         """Load a given catalog."""
-        self._load_dataids(catalog, **kwargs)
         print("INFO: Getting the data from the butler for %i fits files" %
-              len(self.dataids[catalog]))
+              len(self.dataIds[catalog]))
         self.catalogs[catalog] = Table(self._get_catalog(catalog, **kwargs))
         print("INFO: Getting descriptions and units")
         for k in self.catalogs[catalog].keys():
@@ -547,10 +449,9 @@ class DRPCatalogs(DRPLoader):
     def _load_calexp(self, calcat='deepCoadd_calexp', **kwargs):
         """Load the deepCoadd_calexp info in order to get the WCS and the magnitudes."""
         print(colored("\nINFO: Loading the %s info" % calcat, 'green'))
-        self._load_dataids(calcat, **kwargs)
         print("INFO: Getting the %s catalog for one dataId" % calcat)
         calexp = self._load_catalog_dataid(
-            calcat, self.dataids[calcat][0], table=False)
+            calcat, self.dataIds[calcat][0], table=False)
         print("INFO: Getting the magnitude function")
         calib = calexp.getCalib()
         calib.setThrowOnNegativeFlux(False)
@@ -618,25 +519,16 @@ class DRPCatalogs(DRPLoader):
             print(colored("\nWARNING: No catalog loaded nor given.", "yellow"))
             return
         for cat in catalogs:
-            if cat not in self.dataids:
+            if cat not in self.dataIds:
                 print(colored("\nINFO: Get the available data IDs", "green"))
-                self._load_dataids(cat)
-            print(
-                colored("\nINFO: Available list of keys for the %s catalog" % cat, "green"))
-            table = cutils.get_astropy_table(self.butler.get(cat, dataId=self.dataids[cat][0],
-                                                             flags=afwtable.SOURCE_IO_NO_FOOTPRINTS),
-            keys="*", get_info=True)
-            ktable = Table(numpy.transpose([[k, table[k].description, table[k].unit]
-                                         for k in sorted(table.keys())]).tolist(),
-                           names=["Keys", "Description", "Units"])
-            print("  -> %i keys available for %s" % (len(ktable), cat))
+            print(colored("\nINFO: Available list of keys for the %s catalog" % cat, "green"))
+            schema = list(self.schemas[cat + '_schema'])
+            print("  -> %i keys available for %s" % (len(schema), cat))
             print("  -> All saved in %s_keys.txt" % cat)
-            ktable.write("%s_keys.txt" % cat, format='ascii')
+            numpy.savetxt("%s_keys.txt" % cat, schema, fmt="%s")
 
     def save_catalogs(self, output_name, catalog=None, overwrite=False, delete_catalog=False):
         """Save the catalogs into an hdf5 file."""
-        # Clean memory before saving
-        # gc.collect()
         if not output_name.endswith('.hdf5'):
             output_name += '.hdf5'
         print(colored("\nINFO: Saving the catalogs in %s" % output_name, "green"))
@@ -660,5 +552,3 @@ class DRPCatalogs(DRPLoader):
                 self.catalogs[cat] = Table([oid]).copy()
             self.append = True
         print("INFO: Saving done.")
-        # Clean memory before loading a new catalog
-        # gc.collect()
