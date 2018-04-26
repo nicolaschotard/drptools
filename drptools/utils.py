@@ -377,3 +377,25 @@ def js9(myimage):
     </body>
     """.replace('IMAGETOLOAD', myimage)
     return IPython.display.HTML(html)
+
+
+def shorten(doc):
+    """Hack to go around an astropy/hdf5 bug. Cut in half words longer than 18 chars."""
+    return " ".join([w if len(w) < 18 else (w[:int(len(w) / 2)] + ' - ' + w[int(len(w) / 2):])
+                     for w in doc.split()])
+
+
+def get_astropy_table(cat, **kwargs):
+    """Convert an afw data table into a simple astropy table.
+
+    :param cat: an afw data table
+    :return: the corresponding astropy.table.Table
+    """
+    tab = Table(cat.getColumnView().extract(
+        *kwargs['keys'] if 'keys' in kwargs else "*"))
+    if "get_info" in kwargs:
+        schema = kwargs['schema'] if "schema" in kwargs else cat.getSchema()
+        for k in tab.keys():
+            tab[k].description = shorten(schema[k].asField().getDoc())
+            tab[k].unit = schema[k].asField().getUnits()
+    return tab
