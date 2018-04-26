@@ -18,15 +18,12 @@ except ImportError:
     print(colored("WARNING: LSST stack is probably not installed", "yellow"))
 
 
-class LoadDRP(object):
+class DRPLoader(object):
 
     """Load an LSST DRP output and a few useful things."""
     
-    def __init__(self, drp_path=None):
-
-        # Make sure we have data to load
-        if drp_path is None:
-            raise IOError("You must give a path a DRP output directory.")
+    def __init__(self, drp_path):
+        """The 'drp_path' input is the path to the DRP output directory."""
 
         # Load the bulter
         self.drp_path = drp_path
@@ -172,6 +169,13 @@ class LoadDRP(object):
                     pass
         return datatypes
 
+
+class Files(DRPLoader):
+
+    def __init__(self, drp_path):
+        """The 'drp_path' input is the path to the DRP output directory."""
+        super().__init__(drp_path)
+
     def get_file(self, datatype, dataid):
         try:
             cfiles = self.butler.get('%s_filename' % datatype, dataId=dataid)
@@ -216,18 +220,13 @@ class LoadDRP(object):
         return self.get_file(datatype, self.get_dataid_from_dataset(datatype, test=True)[0])
 
 
-class Catalogs(object):
+class Catalogs(DRPLoader):
 
     """Load catalogs from an LSST DRP output path."""
 
-    def __init__(self, path, load_butler=True):
-        """."""
-        # Load the bulter
-        print("INFO: Loading data from", path)
-        if load_butler:
-            self.butler = dafPersist.Butler(path)
-        else:
-            print("WARNING: no butler loaded!")
+    def __init__(self, drp_path):
+        """The 'drp_path' input is the path to the DRP output directory."""
+        super().__init__(drp_path)
 
         # Initialize data dictionnaries
         self.dataids = {}
