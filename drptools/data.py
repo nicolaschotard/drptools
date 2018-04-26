@@ -9,6 +9,7 @@ from astropy.table import Table, Column
 from astropy.units import Quantity
 from termcolor import colored
 from . import utils as cutils
+import IPython
 
 try:
     from lsst.afw import image as afwimage
@@ -39,7 +40,7 @@ class DRPLoader(object):
         self.datasetTypes = self._get_datasetTypes()
         self.datasetTypes_filename = self._get_datasetTypes_withfiles()
         self.dataIds = {}
-        for dataset in ['raw', 'forced_src', 'deepCoadd_meas', 'deepCoadd_forced_src']:
+        for dataset in ['raw', 'forced_src', 'deepCoadd_meas', 'deepCoadd_forced_src', 'calexp', 'eimage']:
             dataids = self.get_dataIds(dataset)
             if len(dataids):
                 self.dataIds[dataset] = dataids
@@ -175,17 +176,17 @@ class DRPLoader(object):
         html = "<h2>General info on the current DRP</h2>"
         
         # Repos
-        html += "<h3>Paths to the repositories</h3>")
-        html += cutils.square_list(["<b>Input</b>: %s</li>" % BUTLER.repo_input,
-                                    "<b>Output</b>: %s</li>" % BUTLER.repo_output
+        html += "<h3>Paths to the repositories</h3>"
+        html += cutils.square_list(["<b>Input</b>: %s</li>" % self.repo_input,
+                                    "<b>Output</b>: %s</li>" % self.repo_output
                                    ]
                                   )
 
         # Info on the mapper, camera, package
         html += "<h3>Mapper info</h3>"
-        html += cutils.square_list(["<b>Package</b>: %s" % BUTLER.mapper_package,
-                                     "<b>Camera</b>: %s" % BUTLER.mapper_camera,
-                                     "<b>Name</b>: %s" % BUTLER.mapper_name
+        html += cutils.square_list(["<b>Package</b>: %s" % self.mapper_package,
+                                     "<b>Camera</b>: %s" % self.mapper_camera,
+                                     "<b>Name</b>: %s" % self.mapper_name
                                     ]
                                    )
                                    
@@ -193,10 +194,10 @@ class DRPLoader(object):
         html += "<h3>Filters and visits</h3>"
         html += "<table>"
         html += "<tr><th>Name</th>"
-        html += "".join(["<td>%s</td>" % filt for filt in BUTLER.filters])
+        html += "".join(["<td>%s</td>" % filt for filt in self.filters])
         html += "</tr>"
         html += "<tr><th>#Visits</th>"
-        html += "".join(["<td>%i</td>" % len(BUTLER.visits[filt]) for filt in BUTLER.filters])
+        html += "".join(["<td>%i</td>" % len(self.visits[filt]) for filt in self.filters])
         html += "</tr>"
         html += "</table>"
         
@@ -208,10 +209,10 @@ class DRPLoader(object):
             html += "<h3>Other info</h3>"
             html += cutils.square_list(items)
 
-        return page
+        return IPython.display.HTML(html)
 
 
-class DRPFiles(DRPLoader):
+class DRPImages(DRPLoader):
 
     def __init__(self, drp_path):
         """The 'drp_path' input is the path to the DRP output directory."""

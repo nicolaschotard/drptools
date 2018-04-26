@@ -332,3 +332,9 @@ def get_astropy_table(cat, **kwargs):
             tab[k].description = shorten(schema[k].asField().getDoc())
             tab[k].unit = schema[k].asField().getUnits()
     return tab
+
+def square_list(items):
+    html = '<ul style="list-style-type:square">'
+    html += "".join(["<li>%s</li>" % item for item in items])
+    html += '</ul>'
+    return html

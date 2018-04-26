@@ -46,6 +46,7 @@ def plot_patches(catalog, clust_coords=None):
 
 
 def js9(myimage):
+    
     html = """
     <head>
     <link type="text/css" rel="stylesheet" href="https://js9.si.edu/js9/js9support.css">
@@ -63,7 +64,7 @@ def js9(myimage):
     <div class="JS9" data-width="600px" data-height="600px"></div>
     <div style="margin-top: 2px;" data-width="600px">
     <div class="JS9Colorbar" data-width="600px"></div>
-    href='javascript:JS9.Load("fits/casa.fits");'
+    <div href='javascript:JS9.Load("IMAGETOLOAD");'></div>
     </div>
     </body>
     """.replace('IMAGETOLOAD', myimage)
