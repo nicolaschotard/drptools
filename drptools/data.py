@@ -168,6 +168,47 @@ class DRPLoader(object):
                 except:
                     pass
         return datatypes
+    
+    def overview(self):
+        """Overview of the current DRP content."""
+        # General info on the data repository
+        html = "<h2>General info on the current DRP</h2>"
+        
+        # Repos
+        html += "<h3>Paths to the repositories</h3>")
+        html += cutils.square_list(["<b>Input</b>: %s</li>" % BUTLER.repo_input,
+                                    "<b>Output</b>: %s</li>" % BUTLER.repo_output
+                                   ]
+                                  )
+
+        # Info on the mapper, camera, package
+        html += "<h3>Mapper info</h3>"
+        html += cutils.square_list(["<b>Package</b>: %s" % BUTLER.mapper_package,
+                                     "<b>Camera</b>: %s" % BUTLER.mapper_camera,
+                                     "<b>Name</b>: %s" % BUTLER.mapper_name
+                                    ]
+                                   )
+                                   
+            
+        html += "<h3>Filters and visits</h3>"
+        html += "<table>"
+        html += "<tr><th>Name</th>"
+        html += "".join(["<td>%s</td>" % filt for filt in BUTLER.filters])
+        html += "</tr>"
+        html += "<tr><th>#Visits</th>"
+        html += "".join(["<td>%i</td>" % len(BUTLER.visits[filt]) for filt in BUTLER.filters])
+        html += "</tr>"
+        html += "</table>"
+        
+        # Other info, filter, skymap, etc.
+        items = []
+        if hasattr(self, 'skymap'):
+            items.append("<b>Sky map</b>: %s" % str(self.skymap_name))
+        if len(items):
+            html += "<h3>Other info</h3>"
+            html += cutils.square_list(items)
+
+        return page
 
 
 class DRPFiles(DRPLoader):
