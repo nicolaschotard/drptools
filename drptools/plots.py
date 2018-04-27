@@ -2,8 +2,14 @@
 
 
 from __future__ import print_function
-import pylab
 import IPython
+import matplotlib
+import lsst.afw.display as afwDisplay
+from IPython import get_ipython
+ipython = get_ipython()
+if ipython:
+    ipython.magic("matplotlib notebook")
+import pylab
 
 
 def plot_coordinates(all_data, filtered_data, cluster_coord=None, title=None):
@@ -45,7 +51,11 @@ def plot_patches(catalog, clust_coords=None):
     pylab.show()
 
 
-def js9(myimage):
+def display_matplotlib(image):
+    display = afwDisplay.getDisplay(1, backend='matplotlib')
+    display.mtv(image)
+    
+def display_js9(myimage):
     js9path = "/pbs/throng/lsst/users/nchotard/drptools/drptools/static/js9-2.0.2"
     js9path = "https://js9.si.edu/js9"
     html = """

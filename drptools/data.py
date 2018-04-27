@@ -8,6 +8,7 @@ from astropy.table import Table, Column
 from astropy.units import Quantity
 from termcolor import colored
 from . import utils as cutils
+from . import plots
 import IPython
 
 try:
@@ -259,6 +260,11 @@ class DRPImages(DRPLoader):
 
     def _type_file(self, datatype):
         return self.get_file(datatype, self.get_dataid_from_dataset(datatype, test=True)[0])
+    
+    def display(self, datatype, dataid, display='matplotlib'):
+        if display == 'matplotlib':
+            image = self.butler.get(datatype, dataid)
+            plots.display_matplotlib(image)
 
 
 class DRPCatalogs(DRPLoader):
